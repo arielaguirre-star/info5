@@ -3,244 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profe Informática - Aula Virtual 5to Año</title>
+    <title>Profe Informática - Dashboard de Programación</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
             background-color: #020617;
-            background-image: 
-                linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.85)),
-                url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop');
-            background-attachment: fixed;
-            background-size: cover;
             color: #f1f5f9;
         }
+
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
+            background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .docente-panel {
-            display: none;
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border-color: rgba(56, 189, 248, 0.4);
         }
+
+        /* Estilos personalizados para inputs */
         input, textarea {
-            background: rgba(15, 23, 42, 0.8) !important;
-            border: 1px solid #334155 !important;
-            color: #f1f5f9 !important;
+            background: rgba(15, 23, 42, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #38bdf8 !important;
+            outline: none;
         }
     </style>
 </head>
-<body class="min-h-screen font-sans">
+<body class="min-h-screen">
 
-    <!-- Navegación -->
-    <nav class="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <span class="text-xl font-bold text-sky-400">Profe Informática</span>
-                <div class="text-slate-400 text-sm italic">5to Año - Ciencias de la Computación</div>
-            </div>
-        </div>
-    </nav>
+    <div id="app"></div>
 
-    <main id="app-content" class="max-w-4xl mx-auto py-10 px-4">
-        <header class="text-center mb-16">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">Guía de Actividades</h1>
-            <p class="text-slate-400 text-lg">Entiende cómo funciona la tecnología por dentro.</p>
-        </header>
-
-        <div id="clases-container" class="space-y-12">
-            <!-- Las clases se cargan mediante JS -->
-        </div>
-
-        <footer class="mt-20 py-10 border-t border-slate-800 text-center text-slate-500 text-sm">
-            <p>© 2024 Cátedra de Informática. Todos los derechos reservados<span id="secret-trigger" class="cursor-default select-none">.</span></p>
-        </footer>
-    </main>
-
-    <!-- Modal Modo Docente -->
-    <div id="docente-modal" class="fixed inset-0 z-50 docente-panel bg-slate-950 p-6 overflow-y-auto">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-bold text-sky-400">Panel de Control Docente</h2>
-                <button onclick="cerrarPanel()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">Cerrar</button>
-            </div>
-            
-            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-800 text-slate-300">
-                        <tr>
-                            <th class="p-4">Alumno</th>
-                            <th class="p-4">Clase</th>
-                            <th class="p-4">Respuesta / Actividad</th>
-                            <th class="p-4">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-respuestas" class="divide-y divide-slate-800">
-                        <!-- Respuestas de Firestore -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN DE FIREBASE ---
-        // AQUÍ ES DONDE DEBES PEGAR TUS DATOS DE LA CONSOLA DE FIREBASE
-        const firebaseConfig = {
+        /**
+         * CONFIGURACIÓN DEL SISTEMA
+         */
+        const apiKey = ""; // API Key de Gemini para Imagen-4
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { 
             apiKey: "AIzaSyBHZbh-cY2BJpxZ7rpMcX2UHGcicUyepE4", 
-            authDomain: "info5-761af.firebaseapp.com",
-            projectId: "info5-761af",
-            storageBucket: "info5-761af.firebasestorage.app",
-            messagingSenderId: "660443432782",
-            appId: "1:660443432782:web:481e5db94c895cfad5001f"
+        authDomain: "info5-761af.firebaseapp.com",
+        storageBucket: "info5-761af.firebasestorage.app",
+        messagingSenderId: "660443432782",
+         appId: "1:660443432782:web:481e5db94c895cfad5001f",
+        projectId: "info5-761af" };
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'aula-informatica-lab';
+
+        let db, auth;
+
+        // Estado de la Aplicación
+        window.state = {
+            view: 'home', 
+            currentClass: null,
+            loading: true,
+            responses: [],
+            studentName: localStorage.getItem('studentName') || '',
+            studentLastName: localStorage.getItem('studentLastName') || '',
+            generatingImage: false,
+            generatedImg: null,
+            showAuthModal: false
         };
 
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = "aula-virtual-informatica"; // Identificador único
-
-        // Autenticación anónima para cumplir con las reglas de seguridad
-        let currentUser = null;
-        async function initAuth() {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Error en auth:", error);
-            }
-        }
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-        });
-
-        // Datos de las clases
-        const CLASES_DATA = [
-            { id: 1, titulo: "Clase 1: Algoritmos", teoria: "Pasos lógicos para resolver problemas.", ejemplo: "El Robot Sándwich.", actividad: "Escribe el algoritmo para cambiar una rueda de auxilio." },
-            { id: 2, titulo: "Clase 2: Sistema Binario", teoria: "Lenguaje de 0 y 1.", ejemplo: "Potencias de 2.", actividad: "¿Qué número decimal es el binario 11010?" },
-            { id: 3, titulo: "Clase 3: Lógica Booleana", teoria: "Toma de decisiones con AND, OR y NOT.", ejemplo: "El portero de la discoteca.", actividad: "Define una regla con OR para el recreo." },
-            { id: 4, titulo: "Clase 4: Compresión", teoria: "Detectar patrones repetidos.", ejemplo: "Sustituir palabras por símbolos.", actividad: "Comprime: 'Tres tristes tigres comen trigo en un trigal'." },
-            { id: 5, titulo: "Clase 5: Arquitectura", teoria: "Modelo Von Neumann.", ejemplo: "La RAM es la mesa de trabajo.", actividad: "¿Qué pasa con la RAM si se corta la luz?" }
+        // Base de Datos de Contenido (Aquí puedes cambiar las preguntas y teorías)
+        const clases = [
+            { id: 1, title: "Algoritmos", icon: "fa-terminal", color: "sky", theory: "Pasos lógicos para resolver un problema.", task: "Algoritmo para preparar un café.", prompt: "Cyberpunk coffee machine with digital displays" },
+            { id: 2, title: "Binario", icon: "fa-binary", color: "indigo", theory: "El lenguaje de 0 y 1.", task: "Convierte el número 10 a binario.", prompt: "Digital 0 and 1 rain like matrix in blue" },
+            { id: 3, title: "Lógica", icon: "fa-code-branch", color: "emerald", theory: "Operadores AND, OR y NOT.", task: "Verdad o Falso: (1 > 0) AND (2 < 1).", prompt: "Neon green logic gates diagram" },
+            { id: 4, title: "Arquitectura", icon: "fa-microchip", color: "rose", theory: "CPU, RAM y Almacenamiento.", task: "¿Qué hace la RAM?", prompt: "Glowy red CPU on a futuristic motherboard" },
+            { id: 5, title: "Redes", icon: "fa-globe", color: "blue", theory: "Cómo se conectan las computadoras.", task: "¿Qué es una dirección IP?", prompt: "Global network of glowing blue data lines" }
         ];
 
-        // Renderizar Clases
-        const container = document.getElementById('clases-container');
-        CLASES_DATA.forEach(clase => {
-            const card = document.createElement('div');
-            card.className = 'glass-card rounded-2xl p-6 sm:p-8 shadow-2xl';
-            card.innerHTML = `
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-sky-400 mb-2">${clase.titulo}</h2>
-                    <p class="text-slate-300 font-medium mb-4">${clase.teoria}</p>
-                    <div class="bg-slate-900/50 rounded-lg p-4 border-l-4 border-slate-700 italic text-slate-400 mb-6">
-                        <strong>Ejemplo:</strong> ${clase.ejemplo}
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <h3 class="text-white font-semibold flex items-center">Actividad</h3>
-                    <p class="text-slate-300">${clase.actividad}</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <input type="text" id="nombre-${clase.id}" placeholder="Nombre" class="rounded-lg px-4 py-2 outline-none">
-                        <input type="text" id="apellido-${clase.id}" placeholder="Apellido" class="rounded-lg px-4 py-2 outline-none">
-                    </div>
-                    <textarea id="resp-${clase.id}" rows="3" placeholder="Tu respuesta aquí..." class="w-full rounded-lg px-4 py-2 outline-none"></textarea>
-                    <button id="btn-${clase.id}" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-8 rounded-lg transition shadow-lg">
-                        Enviar Actividad
-                    </button>
-                </div>
-            `;
-            container.appendChild(card);
-            
-            // Event listener para el botón
-            document.getElementById(`btn-${clase.id}`).addEventListener('click', () => enviarRespuesta(clase.id));
-        });
-
-        // Enviar a Firestore
-        async function enviarRespuesta(claseId) {
-            if (!currentUser) {
-                alert("Espera un momento a que se establezca la conexión...");
-                return;
-            }
-
-            const nombre = document.getElementById(`nombre-${claseId}`).value.trim();
-            const apellido = document.getElementById(`apellido-${claseId}`).value.trim();
-            const respuesta = document.getElementById(`resp-${claseId}`).value.trim();
-
-            if (!nombre || !apellido || !respuesta) {
-                alert("¡Faltan completar campos!");
-                return;
-            }
-
+        async function init() {
             try {
-                // RUTA OBLIGATORIA PARA DATOS PÚBLICOS
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'respuestas');
-                await addDoc(colRef, {
-                    alumno: `${apellido}, ${nombre}`,
-                    clase: claseId,
-                    respuesta: respuesta,
-                    timestamp: serverTimestamp()
+                const firebaseApp = initializeApp(firebaseConfig);
+                auth = getAuth(firebaseApp);
+                db = getFirestore(firebaseApp);
+
+                const sign = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                await sign();
+
+                onAuthStateChanged(auth, (user) => {
+                    window.state.loading = false;
+                    if (user) listenToDatabase();
+                    render();
                 });
-
-                alert(`¡Buen trabajo ${nombre}! Actividad enviada.`);
-                document.getElementById(`resp-${claseId}`).value = "";
             } catch (e) {
-                console.error("Error al guardar:", e);
-                alert("Error al enviar. Verifica tu configuración de Firebase.");
+                console.error("Error inicializando el laboratorio:", e);
+                window.state.loading = false;
+                render();
             }
         }
 
-        // Modo Docente (Doble clic en el punto final)
-        document.getElementById('secret-trigger').addEventListener('dblclick', () => {
-            const pass = prompt("Acceso Docente. Ingrese clave:");
-            if (pass === "1304") {
-                abrirPanel();
-            }
-        });
-
-        function abrirPanel() {
-            const modal = document.getElementById('docente-modal');
-            const tabla = document.getElementById('tabla-respuestas');
-            modal.style.display = 'block';
-
-            // Escuchar cambios en tiempo real
-            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'respuestas');
-            onSnapshot(colRef, (snapshot) => {
-                let entregas = [];
-                snapshot.forEach(doc => entregas.push(doc.data()));
-                
-                // Ordenar alfabéticamente en memoria
-                entregas.sort((a, b) => a.alumno.localeCompare(b.alumno));
-
-                tabla.innerHTML = entregas.map(e => `
-                    <tr class="hover:bg-slate-800/50 border-b border-slate-800">
-                        <td class="p-4 font-semibold text-sky-300">${e.alumno}</td>
-                        <td class="p-4 text-slate-400">Clase ${e.clase}</td>
-                        <td class="p-4 text-slate-300">${e.respuesta}</td>
-                        <td class="p-4 text-xs text-slate-500">${e.timestamp?.toDate().toLocaleString() || 'Enviando...'}</td>
-                    </tr>
-                `).join('');
-                
-                if(entregas.length === 0) {
-                    tabla.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-500">No hay respuestas aún.</td></tr>';
-                }
-            }, (error) => {
-                console.error("Error en tiempo real:", error);
-                alert("Error al cargar datos. Revisa las reglas de seguridad de Firestore.");
-            });
+        function listenToDatabase() {
+            const col = collection(db, 'artifacts', appId, 'public', 'data', 'responses');
+            onSnapshot(col, (snap) => {
+                window.state.responses = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(window.state.view === 'teacher') render();
+            }, (err) => console.log("Error de lectura:", err));
         }
 
-        // Funciones globales para botones
-        window.cerrarPanel = () => {
-            document.getElementById('docente-modal').style.display = 'none';
+        // --- FUNCIONES DE NAVEGACIÓN Y ACCIÓN ---
+        window.setView = (v, idx = null) => {
+            if(v === 'teacher' && window.state.view !== 'teacher') {
+                window.state.showAuthModal = true;
+                render();
+                return;
+            }
+            window.state.view = v;
+            window.state.currentClass = idx;
+            window.state.generatedImg = null;
+            render();
         };
 
+        window.tryLogin = () => {
+            const pass = document.getElementById('pass-field').value;
+            if(pass === '1304') {
+                window.state.showAuthModal = false;
+                window.state.view = 'teacher';
+                render();
+            } else {
+                alert("Clave incorrecta.");
+            }
+        };
+
+        window.submitTask = async (classId) => {
+            const name = window.state.studentName.trim();
+            const last = window.state.studentLastName.trim();
+            const ans = document.getElementById('answer-field').value.trim();
+
+            if(!name || !last || !ans) return alert("Faltan datos.");
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'responses'), {
+                    student: `${last}, ${name}`,
+                    classId,
+                    answer: ans,
+                    timestamp: serverTimestamp()
+                });
+                alert("¡Actividad enviada!");
+                window.setView('home');
+            } catch (e) { alert("Error al guardar."); }
+        };
+
+        // --- RENDERIZADO DEL SITIO ---
+        function render() {
+            const app = document.getElementById('app');
+            if (window.state.loading) {
+                app.innerHTML = `<div class="h-screen flex items-center justify-center text-sky-400 font-bold animate-pulse">CARGANDO CÓDIGO...</div>`;
+                return;
+            }
+
+            let content = '';
+            if (window.state.view === 'home') content = renderHome();
+            else if (window.state.view === 'class') content = renderClass();
+            else if (window.state.view === 'teacher') content = renderTeacher();
+
+            app.innerHTML = `
+                <div class="relative z-10 p-6 md:p-12">
+                    ${content}
+                </div>
+                ${window.state.showAuthModal ? renderModal() : ''}
+            `;
+        }
+
+        function renderHome() {
+            return `
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
+                        <div>
+                            <h1 class="text-5xl font-black italic text-white tracking-tighter uppercase">Laboratorio <span class="text-sky-400">Virtual</span></h1>
+                            <p class="text-slate-500 font-bold tracking-[0.3em] text-[10px] mt-2">Plataforma Educativa para 5to Año</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <input type="text" value="${window.state.studentName}" oninput="window.state.studentName=this.value; localStorage.setItem('studentName', this.value)" placeholder="Nombre" class="p-4 rounded-xl">
+                            <input type="text" value="${window.state.studentLastName}" oninput="window.state.studentLastName=this.value; localStorage.setItem('studentLastName', this.value)" placeholder="Apellido" class="p-4 rounded-xl">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${clases.map((c, i) => `
+                            <div onclick="setView('class', ${i})" class="glass-card class-card p-8 rounded-[2rem] cursor-pointer transition-all">
+                                <i class="fas ${c.icon} text-3xl mb-6 text-${c.color}-400"></i>
+                                <h3 class="text-2xl font-bold text-white mb-2">${c.title}</h3>
+                                <p class="text-slate-400 text-sm">Entrar a la actividad de la Unidad ${c.id}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <footer class="mt-20 text-center border-t border-white/5 py-10">
+                        <button onclick="setView('teacher')" class="text-[10px] font-bold tracking-widest text-slate-700 hover:text-sky-400 transition">SISTEMA DOCENTE</button>
+                    </footer>
+                </div>
+            `;
+        }
+
+        function renderClass() {
+            const c = clases[window.state.currentClass];
+            return `
+                <div class="max-w-4xl mx-auto">
+                    <button onclick="setView('home')" class="mb-8 text-slate-500 hover:text-white font-bold text-sm">
+                        <i class="fas fa-chevron-left mr-2"></i> VOLVER AL INICIO
+                    </button>
+                    <div class="glass-card rounded-[3rem] p-12 overflow-hidden shadow-2xl">
+                        <div class="flex items-center gap-6 mb-10">
+                            <div class="w-16 h-16 rounded-2xl bg-${c.color}-500/20 text-${c.color}-400 flex items-center justify-center text-3xl">
+                                <i class="fas ${c.icon}"></i>
+                            </div>
+                            <h2 class="text-4xl font-black text-white italic">${c.title}</h2>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-12">
+                            <div>
+                                <h4 class="text-sky-400 font-bold text-xs uppercase tracking-widest mb-4">Concepto Teórico</h4>
+                                <p class="text-slate-300 text-lg leading-relaxed mb-10">${c.theory}</p>
+                                <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
+                                    <h4 class="text-${c.color}-400 font-bold text-xs uppercase mb-2">Actividad Práctica</h4>
+                                    <p class="text-white italic">"${c.task}"</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-6">
+                                <textarea id="answer-field" class="w-full h-48 p-6 rounded-2xl" placeholder="Tu respuesta..."></textarea>
+                                <button onclick="submitTask(${c.id})" class="bg-white text-black font-black py-5 rounded-2xl hover:bg-sky-400 transition uppercase tracking-widest text-sm shadow-xl">ENVIAR</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTeacher() {
+            const items = [...window.state.responses].sort((a,b) => a.student.localeCompare(b.student));
+            return `
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-16">
+                        <h2 class="text-3xl font-black text-white italic">SISTEMA <span class="text-sky-400">CENTRAL</span></h2>
+                        <button onclick="setView('home')" class="bg-red-500/10 text-red-500 px-6 py-2 rounded-xl font-bold text-xs">CERRAR SESIÓN</button>
+                    </div>
+                    <div class="grid gap-4">
+                        ${items.map(r => `
+                            <div class="glass-card p-6 rounded-3xl flex flex-col md:flex-row items-center gap-6 border-white/5">
+                                <div class="w-12 h-12 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400 font-bold">${r.student[0]}</div>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <p class="font-bold text-white text-lg">${r.student}</p>
+                                        <span class="text-[9px] bg-slate-800 px-2 py-1 rounded text-slate-400">CLASE ${r.classId}</span>
+                                    </div>
+                                    <p class="text-slate-400 italic text-sm">"${r.answer}"</p>
+                                </div>
+                                <div class="text-xs text-slate-600 font-mono">
+                                    ${r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleTimeString() : '...'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderModal() {
+            return `
+                <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-[100]">
+                    <div class="bg-slate-900 border border-white/10 p-12 rounded-[3rem] w-full max-w-sm text-center">
+                        <h2 class="text-2xl font-black text-white mb-8 italic">ACCESO PRIVADO</h2>
+                        <input type="password" id="pass-field" class="w-full p-4 rounded-xl text-center mb-6 text-xl tracking-[0.5em]" placeholder="••••">
+                        <div class="flex gap-4">
+                            <button onclick="window.state.showAuthModal=false; render()" class="flex-1 text-slate-500 font-bold">CANCELAR</button>
+                            <button onclick="tryLogin()" class="flex-1 bg-white text-black font-black py-4 rounded-xl">ENTRAR</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        init();
     </script>
 </body>
 </html>
