@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profe Informática - Aula Virtual 5to Año</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #020617;
+            background-image: 
+                linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.85)),
+                url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop');
+            background-attachment: fixed;
+            background-size: cover;
+            color: #f1f5f9;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .docente-panel {
+            display: none;
+        }
+        input, textarea {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid #334155 !important;
+            color: #f1f5f9 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans">
+
+    <!-- Navegación -->
+    <nav class="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <span class="text-xl font-bold text-sky-400">Profe Informática</span>
+                <div class="text-slate-400 text-sm italic">5to Año - Ciencias de la Computación</div>
+            </div>
+        </div>
+    </nav>
+
+    <main id="app-content" class="max-w-4xl mx-auto py-10 px-4">
+        <header class="text-center mb-16">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">Guía de Actividades</h1>
+            <p class="text-slate-400 text-lg">Entiende cómo funciona la tecnología por dentro.</p>
+        </header>
+
+        <div id="clases-container" class="space-y-12">
+            <!-- Las clases se cargan mediante JS -->
+        </div>
+
+        <footer class="mt-20 py-10 border-t border-slate-800 text-center text-slate-500 text-sm">
+            <p>© 2024 Cátedra de Informática. Todos los derechos reservados<span id="secret-trigger" class="cursor-default select-none">.</span></p>
+        </footer>
+    </main>
+
+    <!-- Modal Modo Docente -->
+    <div id="docente-modal" class="fixed inset-0 z-50 docente-panel bg-slate-950 p-6 overflow-y-auto">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-sky-400">Panel de Control Docente</h2>
+                <button onclick="cerrarPanel()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">Cerrar</button>
+            </div>
+            
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-800 text-slate-300">
+                        <tr>
+                            <th class="p-4">Alumno</th>
+                            <th class="p-4">Clase</th>
+                            <th class="p-4">Respuesta / Actividad</th>
+                            <th class="p-4">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-respuestas" class="divide-y divide-slate-800">
+                        <!-- Respuestas de Firestore -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        // AQUÍ ES DONDE DEBES PEGAR TUS DATOS DE LA CONSOLA DE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHZbh-cY2BJpxZ7rpMcX2UHGcicUyepE4", 
+            authDomain: "info5-761af.firebaseapp.com",
+            projectId: "info5-761af",
+            storageBucket: "info5-761af.firebasestorage.app",
+            messagingSenderId: "660443432782",
+            appId: "1:660443432782:web:481e5db94c895cfad5001f"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = "aula-virtual-informatica"; // Identificador único
+
+        // Autenticación anónima para cumplir con las reglas de seguridad
+        let currentUser = null;
+        async function initAuth() {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Error en auth:", error);
+            }
+        }
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+        });
+
+        // Datos de las clases
+        const CLASES_DATA = [
+            { id: 1, titulo: "Clase 1: Algoritmos", teoria: "Pasos lógicos para resolver problemas.", ejemplo: "El Robot Sándwich.", actividad: "Escribe el algoritmo para cambiar una rueda de auxilio." },
+            { id: 2, titulo: "Clase 2: Sistema Binario", teoria: "Lenguaje de 0 y 1.", ejemplo: "Potencias de 2.", actividad: "¿Qué número decimal es el binario 11010?" },
+            { id: 3, titulo: "Clase 3: Lógica Booleana", teoria: "Toma de decisiones con AND, OR y NOT.", ejemplo: "El portero de la discoteca.", actividad: "Define una regla con OR para el recreo." },
+            { id: 4, titulo: "Clase 4: Compresión", teoria: "Detectar patrones repetidos.", ejemplo: "Sustituir palabras por símbolos.", actividad: "Comprime: 'Tres tristes tigres comen trigo en un trigal'." },
+            { id: 5, titulo: "Clase 5: Arquitectura", teoria: "Modelo Von Neumann.", ejemplo: "La RAM es la mesa de trabajo.", actividad: "¿Qué pasa con la RAM si se corta la luz?" }
+        ];
+
+        // Renderizar Clases
+        const container = document.getElementById('clases-container');
+        CLASES_DATA.forEach(clase => {
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-2xl p-6 sm:p-8 shadow-2xl';
+            card.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-sky-400 mb-2">${clase.titulo}</h2>
+                    <p class="text-slate-300 font-medium mb-4">${clase.teoria}</p>
+                    <div class="bg-slate-900/50 rounded-lg p-4 border-l-4 border-slate-700 italic text-slate-400 mb-6">
+                        <strong>Ejemplo:</strong> ${clase.ejemplo}
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-white font-semibold flex items-center">Actividad</h3>
+                    <p class="text-slate-300">${clase.actividad}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <input type="text" id="nombre-${clase.id}" placeholder="Nombre" class="rounded-lg px-4 py-2 outline-none">
+                        <input type="text" id="apellido-${clase.id}" placeholder="Apellido" class="rounded-lg px-4 py-2 outline-none">
+                    </div>
+                    <textarea id="resp-${clase.id}" rows="3" placeholder="Tu respuesta aquí..." class="w-full rounded-lg px-4 py-2 outline-none"></textarea>
+                    <button id="btn-${clase.id}" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-8 rounded-lg transition shadow-lg">
+                        Enviar Actividad
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+            
+            // Event listener para el botón
+            document.getElementById(`btn-${clase.id}`).addEventListener('click', () => enviarRespuesta(clase.id));
+        });
+
+        // Enviar a Firestore
+        async function enviarRespuesta(claseId) {
+            if (!currentUser) {
+                alert("Espera un momento a que se establezca la conexión...");
+                return;
+            }
+
+            const nombre = document.getElementById(`nombre-${claseId}`).value.trim();
+            const apellido = document.getElementById(`apellido-${claseId}`).value.trim();
+            const respuesta = document.getElementById(`resp-${claseId}`).value.trim();
+
+            if (!nombre || !apellido || !respuesta) {
+                alert("¡Faltan completar campos!");
+                return;
+            }
+
+            try {
+                // RUTA OBLIGATORIA PARA DATOS PÚBLICOS
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'respuestas');
+                await addDoc(colRef, {
+                    alumno: `${apellido}, ${nombre}`,
+                    clase: claseId,
+                    respuesta: respuesta,
+                    timestamp: serverTimestamp()
+                });
+
+                alert(`¡Buen trabajo ${nombre}! Actividad enviada.`);
+                document.getElementById(`resp-${claseId}`).value = "";
+            } catch (e) {
+                console.error("Error al guardar:", e);
+                alert("Error al enviar. Verifica tu configuración de Firebase.");
+            }
+        }
+
+        // Modo Docente (Doble clic en el punto final)
+        document.getElementById('secret-trigger').addEventListener('dblclick', () => {
+            const pass = prompt("Acceso Docente. Ingrese clave:");
+            if (pass === "1304") {
+                abrirPanel();
+            }
+        });
+
+        function abrirPanel() {
+            const modal = document.getElementById('docente-modal');
+            const tabla = document.getElementById('tabla-respuestas');
+            modal.style.display = 'block';
+
+            // Escuchar cambios en tiempo real
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'respuestas');
+            onSnapshot(colRef, (snapshot) => {
+                let entregas = [];
+                snapshot.forEach(doc => entregas.push(doc.data()));
+                
+                // Ordenar alfabéticamente en memoria
+                entregas.sort((a, b) => a.alumno.localeCompare(b.alumno));
+
+                tabla.innerHTML = entregas.map(e => `
+                    <tr class="hover:bg-slate-800/50 border-b border-slate-800">
+                        <td class="p-4 font-semibold text-sky-300">${e.alumno}</td>
+                        <td class="p-4 text-slate-400">Clase ${e.clase}</td>
+                        <td class="p-4 text-slate-300">${e.respuesta}</td>
+                        <td class="p-4 text-xs text-slate-500">${e.timestamp?.toDate().toLocaleString() || 'Enviando...'}</td>
+                    </tr>
+                `).join('');
+                
+                if(entregas.length === 0) {
+                    tabla.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-500">No hay respuestas aún.</td></tr>';
+                }
+            }, (error) => {
+                console.error("Error en tiempo real:", error);
+                alert("Error al cargar datos. Revisa las reglas de seguridad de Firestore.");
+            });
+        }
+
+        // Funciones globales para botones
+        window.cerrarPanel = () => {
+            document.getElementById('docente-modal').style.display = 'none';
+        };
+
+    </script>
+</body>
+</html>
