@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clase a Clase - Lab Info</title>
+    <title>Laboratorio de Informática - 5to Año</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .btn-nav { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .btn-nav:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(34, 211, 238, 0.2); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -20,12 +21,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN FIREBASE (Cambiar aquí)
-        const firebaseConfig = { apiKey: "AIzaSyBHZbh-cY2BJpxZ7rpMcX2UHGcicUyepE4", authDomain: "info5-761af.firebaseapp.com", projectId: "info5-761af", storageBucket: "info5-761af.firebasestorage.app", messagingSenderId: "660443432782", appId: "1:660443432782:web:481e5db94c895cfad5001f" };
-        const appId = 'lab-clase-a-clase';
+        // CONFIGURACIÓN FIREBASE (Reemplaza con tus datos)
+        const firebaseConfig = { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+        const appId = 'lab-informatica-14clases';
         
         let db, auth;
 
@@ -37,19 +38,31 @@
         };
 
         const clases = [
-            { n: 1, t: "Algoritmos", icon: "fa-terminal", theory: "Instrucciones lógicas y ordenadas.", task: "Escribe el algoritmo para cambiar una lámpara quemada." },
-            { n: 2, t: "Binario", icon: "fa-binary", theory: "Lenguaje de ceros y unos.", task: "¿Cómo se escribe el 10 en binario?" },
-            { n: 3, t: "Hardware", icon: "fa-microchip", theory: "Componentes físicos del sistema.", task: "¿Qué componente se encarga de procesar los datos?" }
-            // Agrega aquí el resto de tus 14 clases siguiendo este formato
+            { n: 1, t: "Algoritmos", icon: "fa-terminal", theory: "Instrucciones lógicas y ordenadas para resolver un problema.", task: "Actividad: Escribe los pasos para que un robot prepare un café.", challenge: "Desafío: ¿Qué pasa si el robot no tiene agua? ¿Cómo afectaría a tu algoritmo?" },
+            { n: 2, t: "Sistema Binario", icon: "fa-binary", theory: "El lenguaje de las máquinas basado en 0 y 1.", task: "Actividad: Convierte tu edad a binario.", challenge: "Desafío: ¿Por qué las máquinas no usan el sistema decimal como nosotros?" },
+            { n: 3, t: "Lógica Booleana", icon: "fa-code-branch", theory: "Operadores AND, OR y NOT para tomar decisiones.", task: "Actividad: Resuelve la tabla de verdad de (V AND F) OR V.", challenge: "Desafío: ¿Cómo aplicarías esto a una lámpara con dos interruptores?" },
+            { n: 4, t: "Compresión de Datos", icon: "fa-file-archive", theory: "Reducir tamaño buscando patrones. Es como usar abreviaturas.", task: "Actividad: Comprime 'Sol solecito, caliéntame un poquito' usando un diccionario.", challenge: "Desafío: ¿Por qué no podemos usar compresión 'con pérdida' en un archivo de texto?" },
+            { n: 5, t: "Arquitectura Von Neumann", icon: "fa-microchip", theory: "El diseño base: CPU, Memoria y Periféricos.", task: "Actividad: Representa la 'CPU Humana' (Memoria, Control y ALU).", challenge: "Desafío: ¿Podría la CPU leer todo directamente desde el disco duro sin usar RAM?" },
+            { n: 6, t: "RAM vs. Almacenamiento", icon: "fa-memory", theory: "La RAM es rápida/volátil; el Disco es lento/permanente.", task: "Actividad: Simula el viaje de un dato desde el estante (Disco) a la mesa (RAM).", challenge: "Desafío: Si se corta la luz y no guardaste, ¿dónde estaba ese texto: en RAM o Disco?" },
+            { n: 7, t: "El Sistema Operativo", icon: "fa-desktop", theory: "El software que gestiona el hardware. El 'Director de Orquesta'.", task: "Actividad: Simula el orden de procesos para usar la pantalla y los parlantes.", challenge: "Desafío: ¿Por qué un programa de Windows no funciona en Linux si el procesador es el mismo?" },
+            { n: 8, t: "Periféricos y Buses", icon: "fa-keyboard", theory: "Entrada, Salida y E/S. El Bus es el camino del dato.", task: "Actividad: Clasifica: Mouse, Impresora, Pendrive, Monitor.", challenge: "Desafío: ¿Un módem es entrada, salida o ambos? Justifica." },
+            { n: 9, t: "Internet: La Red de Redes", icon: "fa-globe", theory: "Conexión global de redes mediante cables físicos y ondas.", task: "Actividad: Simula una 'Telaraña' de nodos donde si uno cae, el mensaje busca otro camino.", challenge: "Desafío: El 99% de internet viaja por cables bajo el mar. ¿Qué ventaja tiene sobre el satélite?" },
+            { n: 10, t: "Protocolos e IP", icon: "fa-network-wired", theory: "Cada dispositivo tiene un número (IP). El DNS traduce nombres a números.", task: "Actividad: Envía un mensaje a un compañero usando solo su número de IP asignado.", challenge: "Desafío: Si falla el DNS, ¿puedes navegar si sabes la IP de Facebook de memoria?" },
+            { n: 11, t: "Ciberseguridad y Ética", icon: "fa-user-shield", theory: "Protección de datos y detección de estafas (Phishing).", task: "Actividad: Analiza correos falsos y busca señales de alerta.", challenge: "Desafío: ¿Cuál es la diferencia entre un Hacker y un Ciberdelincuente (Cracker)?" },
+            { n: 12, t: "Programación: Variables", icon: "fa-cube", theory: "Cajas con nombre que guardan datos: Números, Texto o Booleanos.", task: "Actividad: Crea variables para un juego (Puntaje, Nombre, Vidas).", challenge: "Desafío: Si quiero guardar el precio de un producto, ¿qué tipo de dato uso?" },
+            { n: 13, t: "Bucles y Condicionales", icon: "fa-redo", theory: "SI (Condición) y REPETIR (Bucles).", task: "Actividad: Escribe la rutina de un robot para que camine hasta chocar la pared.", challenge: "Desafío: ¿Qué sucede en la computadora cuando ocurre un 'Bucle Infinito'?" },
+            { n: 14, t: "Inteligencia Artificial", icon: "fa-brain", theory: "Sistemas que aprenden de patrones y ejemplos, no solo de reglas fijas.", task: "Actividad: Entrena a un compañero para que reconozca frutas por patrones.", challenge: "Desafío: Si una IA aprende de internet y hay prejuicios, ¿cómo afectará esto al futuro?" }
         ];
 
         async function init() {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            await signInAnonymously(auth);
-            window.state.loading = false;
-            render();
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                await signInAnonymously(auth);
+                window.state.loading = false;
+                render();
+            } catch (e) { console.error(e); window.state.loading = false; render(); }
         }
 
         window.move = (dir) => {
@@ -58,21 +71,29 @@
                 window.state.currentIdx = newIdx;
                 localStorage.setItem('lastClass', newIdx);
                 render();
+                window.scrollTo(0, 0);
             }
         };
 
         window.send = async () => {
             const c = clases[window.state.currentIdx];
             const ans = document.getElementById('ans').value;
-            if (!window.state.studentName || !ans) return alert("Faltan datos");
+            if (!window.state.studentName || !window.state.studentLastName || !ans) {
+                alert("Por favor completa tu nombre, apellido y la respuesta.");
+                return;
+            }
 
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'responses'), {
-                student: `${window.state.studentLastName}, ${window.state.studentName}`,
-                class: c.n,
-                answer: ans,
-                timestamp: serverTimestamp()
-            });
-            alert("¡Clase " + c.n + " enviada!");
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'responses'), {
+                    student: `${window.state.studentLastName}, ${window.state.studentName}`,
+                    class: c.n,
+                    className: c.t,
+                    answer: ans,
+                    timestamp: serverTimestamp()
+                });
+                alert("¡Excelente! La actividad de la Clase " + c.n + " ha sido enviada.");
+                document.getElementById('ans').value = "";
+            } catch (e) { alert("Error al enviar. Verifica tu conexión."); }
         };
 
         function render() {
@@ -80,45 +101,61 @@
             const c = clases[window.state.currentIdx];
 
             root.innerHTML = `
-                <nav class="p-6 border-b border-white/5 flex justify-between items-center bg-slate-950/50">
-                    <h1 class="text-xl font-black italic">LAB<span class="text-cyan-400">INFO</span></h1>
-                    <div class="flex gap-4">
-                        <input type="text" placeholder="Nombre" value="${window.state.studentName}" oninput="window.state.studentName=this.value; localStorage.setItem('studentName', this.value)" class="bg-slate-900 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-cyan-400">
-                        <input type="text" placeholder="Apellido" value="${window.state.studentLastName}" oninput="window.state.studentLastName=this.value; localStorage.setItem('studentLastName', this.value)" class="bg-slate-900 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-cyan-400">
+                <nav class="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-slate-950/50 gap-4">
+                    <h1 class="text-xl font-black italic tracking-tighter text-white">LAB<span class="text-cyan-400">INFO</span> <span class="text-[10px] font-normal not-italic text-slate-500 uppercase ml-2 tracking-widest">Ciencias de la Computación</span></h1>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <input type="text" placeholder="Nombre" value="${window.state.studentName}" oninput="window.state.studentName=this.value; localStorage.setItem('studentName', this.value)" class="bg-slate-900 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-cyan-400 transition">
+                        <input type="text" placeholder="Apellido" value="${window.state.studentLastName}" oninput="window.state.studentLastName=this.value; localStorage.setItem('studentLastName', this.value)" class="bg-slate-900 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-cyan-400 transition">
                     </div>
                 </nav>
 
-                <main class="flex-grow flex items-center justify-center p-6">
-                    <div class="max-w-3xl w-full glass rounded-[2.5rem] overflow-hidden shadow-2xl">
-                        <div class="p-10 bg-gradient-to-br from-slate-900 to-slate-950 border-b border-white/5">
-                            <div class="flex items-center gap-4 mb-6">
-                                <span class="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Clase ${c.n} de ${clases.length}</span>
+                <main class="flex-grow flex items-center justify-center p-4 md:p-8">
+                    <div class="max-w-4xl w-full glass rounded-[2.5rem] overflow-hidden shadow-2xl">
+                        <div class="p-8 md:p-12 bg-gradient-to-br from-slate-900 to-slate-950 border-b border-white/5 relative">
+                            <div class="flex items-center justify-between mb-8">
+                                <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em]">Clase ${c.n} de ${clases.length}</span>
+                                <i class="fas ${c.icon} text-3xl text-slate-700"></i>
                             </div>
-                            <h2 class="text-4xl font-black text-white mb-4 italic tracking-tighter">${c.t}</h2>
-                            <p class="text-slate-400 text-lg leading-relaxed">${c.theory}</p>
+                            <h2 class="text-4xl md:text-5xl font-black text-white mb-6 italic tracking-tighter">${c.t}</h2>
+                            <div class="space-y-4">
+                                <h4 class="text-cyan-400 font-bold text-[10px] uppercase tracking-widest">Concepto Teórico</h4>
+                                <p class="text-slate-300 text-lg leading-relaxed font-medium">${c.theory}</p>
+                            </div>
                         </div>
 
-                        <div class="p-10 space-y-8">
-                            <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
-                                <h4 class="text-cyan-400 font-bold text-xs uppercase tracking-widest mb-2">Actividad</h4>
-                                <p class="text-white text-xl font-medium italic">"${c.task}"</p>
+                        <div class="p-8 md:p-12 space-y-10">
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div class="bg-white/5 p-6 rounded-3xl border border-white/5">
+                                    <h4 class="text-slate-500 font-bold text-[10px] uppercase tracking-widest mb-3">En el Aula</h4>
+                                    <p class="text-white text-md leading-snug">${c.task}</p>
+                                </div>
+                                <div class="bg-cyan-500/5 p-6 rounded-3xl border border-cyan-500/10">
+                                    <h4 class="text-cyan-400 font-bold text-[10px] uppercase tracking-widest mb-3 italic">Desafío para Enviar</h4>
+                                    <p class="text-white font-bold italic text-md leading-snug">"${c.challenge}"</p>
+                                </div>
                             </div>
 
-                            <textarea id="ans" class="w-full h-40 bg-slate-950/50 border border-white/10 rounded-2xl p-6 text-white outline-none focus:border-cyan-400 transition" placeholder="Escribe tu respuesta aquí..."></textarea>
-                            
-                            <button onclick="send()" class="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-cyan-400 transition-all uppercase tracking-widest text-sm shadow-xl">Enviar Tarea</button>
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Tu Resolución</label>
+                                <textarea id="ans" class="w-full h-44 bg-slate-950/50 border border-white/10 rounded-[2rem] p-6 text-white outline-none focus:border-cyan-400 transition-all resize-none placeholder:text-slate-800" placeholder="Escribe aquí tu respuesta al desafío y las conclusiones de la actividad..."></textarea>
+                                <button onclick="send()" class="w-full bg-white text-black font-black py-5 rounded-[2rem] hover:bg-cyan-400 transition-all uppercase tracking-[0.2em] text-xs shadow-xl active:scale-[0.98]">Enviar Actividad al Profe</button>
+                            </div>
                         </div>
 
-                        <div class="p-6 bg-black/20 flex justify-between gap-4">
-                            <button onclick="move(-1)" ${window.state.currentIdx === 0 ? 'disabled' : ''} class="btn-nav flex-1 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest border border-white/10 disabled:opacity-20">
-                                <i class="fas fa-chevron-left mr-2"></i> Anterior
+                        <div class="p-6 bg-black/40 flex justify-between gap-4 border-t border-white/5">
+                            <button onclick="move(-1)" ${window.state.currentIdx === 0 ? 'disabled' : ''} class="btn-nav flex-1 py-4 px-6 rounded-2xl font-bold text-[10px] uppercase tracking-widest border border-white/5 disabled:opacity-10 transition-all flex items-center justify-center gap-3">
+                                <i class="fas fa-arrow-left"></i> Anterior
                             </button>
-                            <button onclick="move(1)" ${window.state.currentIdx === clases.length - 1 ? 'disabled' : ''} class="btn-nav flex-1 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest border border-white/10 disabled:opacity-20 text-cyan-400">
-                                Siguiente <i class="fas fa-chevron-right ml-2"></i>
+                            <button onclick="move(1)" ${window.state.currentIdx === clases.length - 1 ? 'disabled' : ''} class="btn-nav flex-1 py-4 px-6 rounded-2xl font-bold text-[10px] uppercase tracking-widest border border-white/5 disabled:opacity-10 text-cyan-400 transition-all flex items-center justify-center gap-3">
+                                Siguiente <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </div>
                 </main>
+
+                <footer class="p-8 text-center">
+                    <p class="text-[9px] font-bold text-slate-700 uppercase tracking-[0.4em]">Laboratorio de Ciencias de la Computación &copy; 2024</p>
+                </footer>
             `;
         }
 
@@ -126,4 +163,3 @@
     </script>
 </body>
 </html>
-
