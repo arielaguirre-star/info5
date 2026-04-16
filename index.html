@@ -3,295 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profe Informática - Dashboard de Programación</title>
+    <title>Clase a Clase - Lab Info</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #020617;
-            color: #f1f5f9;
-        }
-
-        .glass-card {
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .class-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            border-color: rgba(56, 189, 248, 0.4);
-        }
-
-        /* Estilos personalizados para inputs */
-        input, textarea {
-            background: rgba(15, 23, 42, 0.6) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: white !important;
-        }
-
-        input:focus, textarea:focus {
-            border-color: #38bdf8 !important;
-            outline: none;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .btn-nav { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-nav:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(34, 211, 238, 0.2); }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-    <div id="app"></div>
+    <div id="app-root" class="flex-grow flex flex-col"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        /**
-         * CONFIGURACIÓN DEL SISTEMA
-         */
-        const apiKey = ""; // API Key de Gemini para Imagen-4
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { 
-            apiKey: "AIzaSyBHZbh-cY2BJpxZ7rpMcX2UHGcicUyepE4", 
-        authDomain: "info5-761af.firebaseapp.com",
-        storageBucket: "info5-761af.firebasestorage.app",
-        messagingSenderId: "660443432782",
-         appId: "1:660443432782:web:481e5db94c895cfad5001f",
-        projectId: "info5-761af" };
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'aula-informatica-lab';
-
+        // CONFIGURACIÓN FIREBASE (Cambiar aquí)
+        const firebaseConfig = { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+        const appId = 'lab-clase-a-clase';
+        
         let db, auth;
 
-        // Estado de la Aplicación
         window.state = {
-            view: 'home', 
-            currentClass: null,
-            loading: true,
-            responses: [],
+            currentIdx: parseInt(localStorage.getItem('lastClass')) || 0,
             studentName: localStorage.getItem('studentName') || '',
             studentLastName: localStorage.getItem('studentLastName') || '',
-            generatingImage: false,
-            generatedImg: null,
-            showAuthModal: false
+            loading: true
         };
 
-        // Base de Datos de Contenido (Aquí puedes cambiar las preguntas y teorías)
         const clases = [
-            { id: 1, title: "Algoritmos", icon: "fa-terminal", color: "sky", theory: "Pasos lógicos para resolver un problema.", task: "Algoritmo para preparar un café.", prompt: "Cyberpunk coffee machine with digital displays" },
-            { id: 2, title: "Binario", icon: "fa-binary", color: "indigo", theory: "El lenguaje de 0 y 1.", task: "Convierte el número 10 a binario.", prompt: "Digital 0 and 1 rain like matrix in blue" },
-            { id: 3, title: "Lógica", icon: "fa-code-branch", color: "emerald", theory: "Operadores AND, OR y NOT.", task: "Verdad o Falso: (1 > 0) AND (2 < 1).", prompt: "Neon green logic gates diagram" },
-            { id: 4, title: "Arquitectura", icon: "fa-microchip", color: "rose", theory: "CPU, RAM y Almacenamiento.", task: "¿Qué hace la RAM?", prompt: "Glowy red CPU on a futuristic motherboard" },
-            { id: 5, title: "Redes", icon: "fa-globe", color: "blue", theory: "Cómo se conectan las computadoras.", task: "¿Qué es una dirección IP?", prompt: "Global network of glowing blue data lines" }
+            { n: 1, t: "Algoritmos", icon: "fa-terminal", theory: "Instrucciones lógicas y ordenadas.", task: "Escribe el algoritmo para cambiar una lámpara quemada." },
+            { n: 2, t: "Binario", icon: "fa-binary", theory: "Lenguaje de ceros y unos.", task: "¿Cómo se escribe el 10 en binario?" },
+            { n: 3, t: "Hardware", icon: "fa-microchip", theory: "Componentes físicos del sistema.", task: "¿Qué componente se encarga de procesar los datos?" }
+            // Agrega aquí el resto de tus 14 clases siguiendo este formato
         ];
 
         async function init() {
-            try {
-                const firebaseApp = initializeApp(firebaseConfig);
-                auth = getAuth(firebaseApp);
-                db = getFirestore(firebaseApp);
-
-                const sign = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                await sign();
-
-                onAuthStateChanged(auth, (user) => {
-                    window.state.loading = false;
-                    if (user) listenToDatabase();
-                    render();
-                });
-            } catch (e) {
-                console.error("Error inicializando el laboratorio:", e);
-                window.state.loading = false;
-                render();
-            }
-        }
-
-        function listenToDatabase() {
-            const col = collection(db, 'artifacts', appId, 'public', 'data', 'responses');
-            onSnapshot(col, (snap) => {
-                window.state.responses = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                if(window.state.view === 'teacher') render();
-            }, (err) => console.log("Error de lectura:", err));
-        }
-
-        // --- FUNCIONES DE NAVEGACIÓN Y ACCIÓN ---
-        window.setView = (v, idx = null) => {
-            if(v === 'teacher' && window.state.view !== 'teacher') {
-                window.state.showAuthModal = true;
-                render();
-                return;
-            }
-            window.state.view = v;
-            window.state.currentClass = idx;
-            window.state.generatedImg = null;
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            await signInAnonymously(auth);
+            window.state.loading = false;
             render();
-        };
+        }
 
-        window.tryLogin = () => {
-            const pass = document.getElementById('pass-field').value;
-            if(pass === '1304') {
-                window.state.showAuthModal = false;
-                window.state.view = 'teacher';
+        window.move = (dir) => {
+            const newIdx = window.state.currentIdx + dir;
+            if (newIdx >= 0 && newIdx < clases.length) {
+                window.state.currentIdx = newIdx;
+                localStorage.setItem('lastClass', newIdx);
                 render();
-            } else {
-                alert("Clave incorrecta.");
             }
         };
 
-        window.submitTask = async (classId) => {
-            const name = window.state.studentName.trim();
-            const last = window.state.studentLastName.trim();
-            const ans = document.getElementById('answer-field').value.trim();
+        window.send = async () => {
+            const c = clases[window.state.currentIdx];
+            const ans = document.getElementById('ans').value;
+            if (!window.state.studentName || !ans) return alert("Faltan datos");
 
-            if(!name || !last || !ans) return alert("Faltan datos.");
-
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'responses'), {
-                    student: `${last}, ${name}`,
-                    classId,
-                    answer: ans,
-                    timestamp: serverTimestamp()
-                });
-                alert("¡Actividad enviada!");
-                window.setView('home');
-            } catch (e) { alert("Error al guardar."); }
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'responses'), {
+                student: `${window.state.studentLastName}, ${window.state.studentName}`,
+                class: c.n,
+                answer: ans,
+                timestamp: serverTimestamp()
+            });
+            alert("¡Clase " + c.n + " enviada!");
         };
 
-        // --- RENDERIZADO DEL SITIO ---
         function render() {
-            const app = document.getElementById('app');
-            if (window.state.loading) {
-                app.innerHTML = `<div class="h-screen flex items-center justify-center text-sky-400 font-bold animate-pulse">CARGANDO CÓDIGO...</div>`;
-                return;
-            }
+            const root = document.getElementById('app-root');
+            const c = clases[window.state.currentIdx];
 
-            let content = '';
-            if (window.state.view === 'home') content = renderHome();
-            else if (window.state.view === 'class') content = renderClass();
-            else if (window.state.view === 'teacher') content = renderTeacher();
-
-            app.innerHTML = `
-                <div class="relative z-10 p-6 md:p-12">
-                    ${content}
-                </div>
-                ${window.state.showAuthModal ? renderModal() : ''}
-            `;
-        }
-
-        function renderHome() {
-            return `
-                <div class="max-w-6xl mx-auto">
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
-                        <div>
-                            <h1 class="text-5xl font-black italic text-white tracking-tighter uppercase">Laboratorio <span class="text-sky-400">Virtual</span></h1>
-                            <p class="text-slate-500 font-bold tracking-[0.3em] text-[10px] mt-2">Plataforma Educativa para 5to Año</p>
-                        </div>
-                        <div class="flex gap-4">
-                            <input type="text" value="${window.state.studentName}" oninput="window.state.studentName=this.value; localStorage.setItem('studentName', this.value)" placeholder="Nombre" class="p-4 rounded-xl">
-                            <input type="text" value="${window.state.studentLastName}" oninput="window.state.studentLastName=this.value; localStorage.setItem('studentLastName', this.value)" placeholder="Apellido" class="p-4 rounded-xl">
-                        </div>
+            root.innerHTML = `
+                <nav class="p-6 border-b border-white/5 flex justify-between items-center bg-slate-950/50">
+                    <h1 class="text-xl font-black italic">LAB<span class="text-cyan-400">INFO</span></h1>
+                    <div class="flex gap-4">
+                        <input type="text" placeholder="Nombre" value="${window.state.studentName}" oninput="window.state.studentName=this.value; localStorage.setItem('studentName', this.value)" class="bg-slate-900 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-cyan-400">
+                        <input type="text" placeholder="Apellido" value="${window.state.studentLastName}" oninput="window.state.studentLastName=this.value; localStorage.setItem('studentLastName', this.value)" class="bg-slate-900 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-cyan-400">
                     </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${clases.map((c, i) => `
-                            <div onclick="setView('class', ${i})" class="glass-card class-card p-8 rounded-[2rem] cursor-pointer transition-all">
-                                <i class="fas ${c.icon} text-3xl mb-6 text-${c.color}-400"></i>
-                                <h3 class="text-2xl font-bold text-white mb-2">${c.title}</h3>
-                                <p class="text-slate-400 text-sm">Entrar a la actividad de la Unidad ${c.id}</p>
-                            </div>
-                        `).join('')}
-                    </div>
+                </nav>
 
-                    <footer class="mt-20 text-center border-t border-white/5 py-10">
-                        <button onclick="setView('teacher')" class="text-[10px] font-bold tracking-widest text-slate-700 hover:text-sky-400 transition">SISTEMA DOCENTE</button>
-                    </footer>
-                </div>
-            `;
-        }
-
-        function renderClass() {
-            const c = clases[window.state.currentClass];
-            return `
-                <div class="max-w-4xl mx-auto">
-                    <button onclick="setView('home')" class="mb-8 text-slate-500 hover:text-white font-bold text-sm">
-                        <i class="fas fa-chevron-left mr-2"></i> VOLVER AL INICIO
-                    </button>
-                    <div class="glass-card rounded-[3rem] p-12 overflow-hidden shadow-2xl">
-                        <div class="flex items-center gap-6 mb-10">
-                            <div class="w-16 h-16 rounded-2xl bg-${c.color}-500/20 text-${c.color}-400 flex items-center justify-center text-3xl">
-                                <i class="fas ${c.icon}"></i>
+                <main class="flex-grow flex items-center justify-center p-6">
+                    <div class="max-w-3xl w-full glass rounded-[2.5rem] overflow-hidden shadow-2xl">
+                        <div class="p-10 bg-gradient-to-br from-slate-900 to-slate-950 border-b border-white/5">
+                            <div class="flex items-center gap-4 mb-6">
+                                <span class="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Clase ${c.n} de ${clases.length}</span>
                             </div>
-                            <h2 class="text-4xl font-black text-white italic">${c.title}</h2>
+                            <h2 class="text-4xl font-black text-white mb-4 italic tracking-tighter">${c.t}</h2>
+                            <p class="text-slate-400 text-lg leading-relaxed">${c.theory}</p>
                         </div>
-                        
-                        <div class="grid md:grid-cols-2 gap-12">
-                            <div>
-                                <h4 class="text-sky-400 font-bold text-xs uppercase tracking-widest mb-4">Concepto Teórico</h4>
-                                <p class="text-slate-300 text-lg leading-relaxed mb-10">${c.theory}</p>
-                                <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
-                                    <h4 class="text-${c.color}-400 font-bold text-xs uppercase mb-2">Actividad Práctica</h4>
-                                    <p class="text-white italic">"${c.task}"</p>
-                                </div>
+
+                        <div class="p-10 space-y-8">
+                            <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
+                                <h4 class="text-cyan-400 font-bold text-xs uppercase tracking-widest mb-2">Actividad</h4>
+                                <p class="text-white text-xl font-medium italic">"${c.task}"</p>
                             </div>
-                            <div class="flex flex-col gap-6">
-                                <textarea id="answer-field" class="w-full h-48 p-6 rounded-2xl" placeholder="Tu respuesta..."></textarea>
-                                <button onclick="submitTask(${c.id})" class="bg-white text-black font-black py-5 rounded-2xl hover:bg-sky-400 transition uppercase tracking-widest text-sm shadow-xl">ENVIAR</button>
-                            </div>
+
+                            <textarea id="ans" class="w-full h-40 bg-slate-950/50 border border-white/10 rounded-2xl p-6 text-white outline-none focus:border-cyan-400 transition" placeholder="Escribe tu respuesta aquí..."></textarea>
+                            
+                            <button onclick="send()" class="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-cyan-400 transition-all uppercase tracking-widest text-sm shadow-xl">Enviar Tarea</button>
+                        </div>
+
+                        <div class="p-6 bg-black/20 flex justify-between gap-4">
+                            <button onclick="move(-1)" ${window.state.currentIdx === 0 ? 'disabled' : ''} class="btn-nav flex-1 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest border border-white/10 disabled:opacity-20">
+                                <i class="fas fa-chevron-left mr-2"></i> Anterior
+                            </button>
+                            <button onclick="move(1)" ${window.state.currentIdx === clases.length - 1 ? 'disabled' : ''} class="btn-nav flex-1 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest border border-white/10 disabled:opacity-20 text-cyan-400">
+                                Siguiente <i class="fas fa-chevron-right ml-2"></i>
+                            </button>
                         </div>
                     </div>
-                </div>
-            `;
-        }
-
-        function renderTeacher() {
-            const items = [...window.state.responses].sort((a,b) => a.student.localeCompare(b.student));
-            return `
-                <div class="max-w-6xl mx-auto">
-                    <div class="flex justify-between items-center mb-16">
-                        <h2 class="text-3xl font-black text-white italic">SISTEMA <span class="text-sky-400">CENTRAL</span></h2>
-                        <button onclick="setView('home')" class="bg-red-500/10 text-red-500 px-6 py-2 rounded-xl font-bold text-xs">CERRAR SESIÓN</button>
-                    </div>
-                    <div class="grid gap-4">
-                        ${items.map(r => `
-                            <div class="glass-card p-6 rounded-3xl flex flex-col md:flex-row items-center gap-6 border-white/5">
-                                <div class="w-12 h-12 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400 font-bold">${r.student[0]}</div>
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <p class="font-bold text-white text-lg">${r.student}</p>
-                                        <span class="text-[9px] bg-slate-800 px-2 py-1 rounded text-slate-400">CLASE ${r.classId}</span>
-                                    </div>
-                                    <p class="text-slate-400 italic text-sm">"${r.answer}"</p>
-                                </div>
-                                <div class="text-xs text-slate-600 font-mono">
-                                    ${r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleTimeString() : '...'}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderModal() {
-            return `
-                <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-[100]">
-                    <div class="bg-slate-900 border border-white/10 p-12 rounded-[3rem] w-full max-w-sm text-center">
-                        <h2 class="text-2xl font-black text-white mb-8 italic">ACCESO PRIVADO</h2>
-                        <input type="password" id="pass-field" class="w-full p-4 rounded-xl text-center mb-6 text-xl tracking-[0.5em]" placeholder="••••">
-                        <div class="flex gap-4">
-                            <button onclick="window.state.showAuthModal=false; render()" class="flex-1 text-slate-500 font-bold">CANCELAR</button>
-                            <button onclick="tryLogin()" class="flex-1 bg-white text-black font-black py-4 rounded-xl">ENTRAR</button>
-                        </div>
-                    </div>
-                </div>
+                </main>
             `;
         }
 
@@ -299,3 +126,16 @@
     </script>
 </body>
 </html>
+```
+
+### ¿Dónde cambiar los datos de Firebase ahora?
+Busca la **línea 30** del código de arriba:
+```javascript
+const firebaseConfig = { 
+    apiKey: "TU_API_KEY", 
+    authDomain: "TU_DOMINIO", 
+    projectId: "TU_PROJECT_ID", 
+    storageBucket: "TU_BUCKET", 
+    messagingSenderId: "TU_SENDER_ID", 
+    appId: "TU_APP_ID" 
+};
